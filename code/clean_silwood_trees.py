@@ -69,7 +69,7 @@ def validate_record(
         reasons.append("invalid location")
     else:
         location = valid_locations[location.lower()]
-    
+
     genus = (row.get("genus") or "").strip()
 
     valid_genera = {
@@ -86,7 +86,7 @@ def validate_record(
         reasons.append("invalid genus")
     else:
         genus = valid_genera[genus.lower()]
-    
+
     species = (row.get("species") or "").strip()
 
     valid_species = {
@@ -104,7 +104,7 @@ def validate_record(
         reasons.append("invalid species")
     else:
         species = valid_species[species.lower()]
-    
+
     valid_combinations = {
         ("Quercus", "robur"),
         ("Quercus", "petraea"),
@@ -117,7 +117,7 @@ def validate_record(
     if genus in valid_genera.values() and species in valid_species.values():
         if (genus, species) not in valid_combinations:
             reasons.append("invalid genus/species combination")
-    
+
     distance = (row.get("distance_m") or "").strip()
 
     if distance == "":
@@ -134,7 +134,7 @@ def validate_record(
                 reasons.append("distance_m out of range")
             else:
                 distance = str(distance_value)
-    
+
     angle = (row.get("angle_degrees") or "").strip()
 
     if angle == "":

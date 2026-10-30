@@ -1,0 +1,38 @@
+# header = false because the raw data don't have real headers
+MyData <- as.matrix(read.csv("data/pound_hill_data.csv", header = FALSE))
+
+# header = true because we do have metadata headers
+MyMetaData <- read.csv("data/pound_hill_meta_data.csv", header = TRUE, sep = ";")
+
+head(MyData)
+dim(MyData)
+str(MyData)
+# fix(MyData)
+# fix(MyMetaData)
+# ?melt
+
+# To get those species into columns and treatments into rows
+MyData <- t(MyData)
+head(MyData)
+dim(MyData)
+
+MyData[MyData == ""] = 0
+
+TempData <- as.data.frame(MyData[-1,],stringsAsFactors = F) #stringsAsFactors = F
+colnames(TempData) <- MyData[1,] # assign column names from original data
+
+require(reshape2) # load the reshape2 package
+
+?melt #check out the melt function
+
+MyWrangledData <- melt(TempData, id=c("Cultivation", "Block", "Plot", "Quadrat"), variable.name = "Species", value.name = "Count")
+
+MyWrangledData[, "Cultivation"] <- as.factor(MyWrangledData[, "Cultivation"])
+MyWrangledData[, "Block"] <- as.factor(MyWrangledData[, "Block"])
+MyWrangledData[, "Plot"] <- as.factor(MyWrangledData[, "Plot"])
+MyWrangledData[, "Quadrat"] <- as.factor(MyWrangledData[, "Quadrat"])
+MyWrangledData[, "Count"] <- as.integer(MyWrangledData[, "Count"])
+
+str(MyWrangledData)
+head(MyWrangledData)
+dim(MyWrangledData)
