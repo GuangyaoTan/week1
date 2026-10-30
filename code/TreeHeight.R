@@ -1,3 +1,9 @@
+# Calculate tree height from angle in degrees and distance in metres
+TreeHeight <- function(angle_degrees, distance_m) {
+  height_m <- distance_m * tan(angle_degrees * pi / 180)
+  return(height_m)
+}
+
 input_file    <- "data/trees.csv"
 output_file   <- "results/TreeHts.csv"
 required_cols <- c("Species", "Distance.m", "Angle.degrees")
@@ -23,7 +29,7 @@ if (any(trees$Angle.degrees <= 0 | trees$Angle.degrees >= 90)) {
 }
 
 #Calculate tree height in meters using the formula: height = distance * tan(angle)
-trees$height_m <- trees$Distance.m * tan(trees$Angle.degrees * pi / 180)
+trees$height_m <- TreeHeight(trees$Angle.degrees, trees$Distance.m)
 
 dir.create("results", showWarnings = FALSE)
 write.csv(trees, output_file, row.names = FALSE)
