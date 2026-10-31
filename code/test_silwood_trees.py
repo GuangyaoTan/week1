@@ -21,10 +21,7 @@ from unittest import mock
 
 import clean_silwood_trees as cst
 
-
-# ---------------------------------------------------------------------------
 # Facts copied from the metadata (written here independently of the program)
-# ---------------------------------------------------------------------------
 
 COLUMNS = [
     "record_id", "location", "genus", "species", "distance_m", "angle_degrees",
@@ -70,10 +67,7 @@ HEADERS = {
     "oak_species_counts.csv": "species,count",
 }
 
-
-# ---------------------------------------------------------------------------
 # Small helpers
-# ---------------------------------------------------------------------------
 
 def make_row(**changes):
     """Return one valid survey row; keyword arguments replace fields."""
@@ -133,9 +127,7 @@ def run_main(results_dir, rows):
             cst.main()
 
 
-# ---------------------------------------------------------------------------
 # 1. Valid records and text cleaning
-# ---------------------------------------------------------------------------
 
 class TestValidRecords(unittest.TestCase):
 
@@ -192,9 +184,7 @@ class TestValidRecords(unittest.TestCase):
         self.assertEqual(ids, {"ST009"})
 
 
-# ---------------------------------------------------------------------------
 # 2. Missing and invalid values
-# ---------------------------------------------------------------------------
 
 class TestMissingAndInvalidValues(unittest.TestCase):
 
@@ -235,9 +225,7 @@ class TestMissingAndInvalidValues(unittest.TestCase):
                     self.assertEqual(reasons_for(row), [f"invalid {field}"])
 
 
-# ---------------------------------------------------------------------------
 # 3. Number limits, nan and inf
-# ---------------------------------------------------------------------------
 
 class TestNumberLimits(unittest.TestCase):
 
@@ -278,9 +266,7 @@ class TestNumberLimits(unittest.TestCase):
                     self.assertEqual(reasons_for(row), [f"invalid {field}"])
 
 
-# ---------------------------------------------------------------------------
 # 4. Duplicate identifiers
-# ---------------------------------------------------------------------------
 
 class TestDuplicateIds(unittest.TestCase):
 
@@ -315,9 +301,7 @@ class TestDuplicateIds(unittest.TestCase):
                                    "reasons": "invalid location"}])
 
 
-# ---------------------------------------------------------------------------
 # 5. The 16 reasons, several errors in one row, and their order
-# ---------------------------------------------------------------------------
 
 class TestRejectionReasons(unittest.TestCase):
 
@@ -390,9 +374,7 @@ class TestRejectionReasons(unittest.TestCase):
                          "duplicate record_id; invalid location")
 
 
-# ---------------------------------------------------------------------------
 # 6. Genus / species pairs
-# ---------------------------------------------------------------------------
 
 class TestGenusSpeciesPairs(unittest.TestCase):
 
@@ -423,9 +405,7 @@ class TestGenusSpeciesPairs(unittest.TestCase):
                 self.assertEqual(reasons_for(row), expected)
 
 
-# ---------------------------------------------------------------------------
 # 7. Oak summary
-# ---------------------------------------------------------------------------
 
 class TestOakSummary(unittest.TestCase):
 
@@ -446,6 +426,30 @@ class TestOakSummary(unittest.TestCase):
         self.assertEqual(cst.summarise_oaks([oak("robur")]),
                          [{"species": "robur", "count": "1"}])
 
+    def test_valid_and_invalid_oaks_flow_through_partition_and_summary(self):
+        valid = make_row(record_id="ST001", genus=" quercus ",
+                         species=" ROBUR ")
+        invalid = make_row(record_id="ST002", genus="Quercus",
+                           species="petraea", angle_degrees="90")
+
+        # Check validation itself, then the connected processing workflow.
+        cleaned, reasons = cst.validate_record(valid, 2, set())
+        expected = make_row(record_id="ST001", genus="Quercus",
+                            species="robur", distance_m="10.0",
+                            angle_degrees="45.0")
+        self.assertEqual(cleaned, expected)
+        self.assertEqual(reasons, [])
+        self.assertEqual(cst.validate_record(invalid, 3, set()),
+                         (None, ["angle_degrees out of range"]))
+
+        accepted, issues = cst.process_records([valid, invalid])
+        self.assertEqual(accepted, [expected])
+        self.assertEqual(issues, [{"source_row": "3", "record_id": "ST002",
+                                   "reasons": "angle_degrees out of range"}])
+        # Summarise the returned accepted collection, never the original rows.
+        self.assertEqual(cst.summarise_oaks(accepted),
+                         [{"species": "robur", "count": "1"}])
+
     def test_only_accepted_records_are_counted(self):
         rows = [
             make_row(record_id="ST001", genus="quercus", species="ROBUR"),
@@ -461,10 +465,7 @@ class TestOakSummary(unittest.TestCase):
                          [{"species": "petraea", "count": "1"},
                           {"species": "robur", "count": "1"}])
 
-
-# ---------------------------------------------------------------------------
 # 8. Sorting and source_row
-# ---------------------------------------------------------------------------
 
 class TestOrderAndRowNumbers(unittest.TestCase):
 
@@ -519,9 +520,7 @@ class TestOrderAndRowNumbers(unittest.TestCase):
                 cst.load_records(path)
 
 
-# ---------------------------------------------------------------------------
 # 9. Import side effects, output files and repeated runs
-# ---------------------------------------------------------------------------
 
 class TestOutputFiles(unittest.TestCase):
 
@@ -582,10 +581,7 @@ class TestOutputFiles(unittest.TestCase):
             self.assertEqual(read_lines(old_file),
                              ["species,count", "robur,1"])
 
-
-# ---------------------------------------------------------------------------
 # Extra check on the real survey (the small tests above are the main tests)
-# ---------------------------------------------------------------------------
 
 @unittest.skipUnless(cst.INPUT_PATH.exists(), "raw survey file not found")
 class TestRealSurvey(unittest.TestCase):
