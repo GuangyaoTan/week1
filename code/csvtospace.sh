@@ -10,12 +10,17 @@ if [ ! -f "$1" ] || [ ! -r "$1" ]; then
     exit 1
 fi
 
-mkdir -p ../results
+# Resolve results relative to this script, independently of the working directory.
+script_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd) || exit 1
+results_dir="$script_dir/../results"
+if ! mkdir -p "$results_dir"; then
+    echo "Error: could not create output directory" >&2
+    exit 1
+fi
 
-output="../results/$(basename "$1").txt"
-
+output="$results_dir/$(basename -- "$1").txt"
 if tr ',' ' ' < "$1" > "$output"; then
-    echo "Done!"
+    echo "Done! $output"
 else
     echo "Error: conversion failed" >&2
     exit 1
